@@ -81,7 +81,7 @@ env:
   CM_BUNDLED: lab/bin/cm-linux
   # How many of the top-ranked HIGH/CRITICAL findings to auto-remediate in one
   # run (all land in a single PR). Set to 1 for a minimal single-fix lab.
-  CM_FIX_LIMIT: "3"
+  CM_FIX_LIMIT: "1"
   GCP_WIF_PROVIDER: "projects/755556523613/locations/global/workloadIdentityPools/github-actions/providers/github-oidc"
   GCP_SA_EMAIL: "codemender-ci@elevate-cm-01-rt9xt4.iam.gserviceaccount.com"
   GCP_QUOTA_PROJECT: "elevate-cm-01-rt9xt4"
