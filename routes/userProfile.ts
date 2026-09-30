@@ -58,6 +58,10 @@ export function getUserProfile () {
       username = '\\' + username
     }
 
+    if (username) {
+      username = username.replace(/(?<!\\)#{/g, '\\#{')
+    }
+
     const themeKey = config.get<string>('application.theme') as keyof typeof themes
     const theme = themes[themeKey] || themes['bluegrey-lightgreen']
 
