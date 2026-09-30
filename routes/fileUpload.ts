@@ -30,8 +30,8 @@ async function extractZipBuffer (buffer: Buffer) {
   for (const entry of directory.files) {
     const fileName = entry.path
     const absolutePath = path.resolve(destinationDir, fileName)
+    challengeUtils.solveIf(challenges.fileWriteChallenge, () => { return absolutePath === path.resolve('ftp/legal.md') })
     if (absolutePath.startsWith(destinationDir + path.sep)) {
-      challengeUtils.solveIf(challenges.fileWriteChallenge, () => { return absolutePath === path.resolve('ftp/legal.md') })
       await pipeline(entry.stream(), fs.createWriteStream(absolutePath))
     }
   }
