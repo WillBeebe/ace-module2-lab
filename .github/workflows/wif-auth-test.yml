@@ -18,6 +18,9 @@ permissions:
 
 env:
   CM_BUNDLED: lab/bin/cm-linux   # vendored in the repo (releases don't copy on fork/template)
+  GCP_WIF_PROVIDER: "projects/755556523613/locations/global/workloadIdentityPools/github-actions/providers/github-oidc"
+  GCP_SA_EMAIL: "codemender-ci@elevate-cm-01-rt9xt4.iam.gserviceaccount.com"
+  GCP_QUOTA_PROJECT: "elevate-cm-01-rt9xt4"
 
 jobs:
   wif-test:
@@ -30,10 +33,13 @@ jobs:
       - name: Guard - WIF variables present
         run: |
           set -euo pipefail
+          PROVIDER="${{ vars.GCP_WIF_PROVIDER || env.GCP_WIF_PROVIDER }}"
+          SA="${{ vars.GCP_SA_EMAIL || env.GCP_SA_EMAIL }}"
+          PROJECT="${{ vars.GCP_QUOTA_PROJECT || env.GCP_QUOTA_PROJECT }}"
           MISSING=""
-          [ -n "${{ vars.GCP_WIF_PROVIDER }}" ] || MISSING="$MISSING GCP_WIF_PROVIDER"
-          [ -n "${{ vars.GCP_SA_EMAIL }}" ]     || MISSING="$MISSING GCP_SA_EMAIL"
-          [ -n "${{ vars.GCP_QUOTA_PROJECT }}" ] || MISSING="$MISSING GCP_QUOTA_PROJECT"
+          [ -n "$PROVIDER" ] || MISSING="$MISSING GCP_WIF_PROVIDER"
+          [ -n "$SA" ]       || MISSING="$MISSING GCP_SA_EMAIL"
+          [ -n "$PROJECT" ]  || MISSING="$MISSING GCP_QUOTA_PROJECT"
           [ -n "${{ secrets.WIF_AUDIENCE }}" ]   || MISSING="$MISSING WIF_AUDIENCE(secret)"
           if [ -n "$MISSING" ]; then
             echo "::error title=WIF configuration missing::Set:$MISSING (lab/setup-wif.sh prints the exact commands; audience comes from the lab page)."
@@ -44,8 +50,8 @@ jobs:
         id: auth
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
-          service_account: ${{ vars.GCP_SA_EMAIL }}
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER || env.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_SA_EMAIL || env.GCP_SA_EMAIL }}
           audience: ${{ secrets.WIF_AUDIENCE }}
 
       - name: Prove identity

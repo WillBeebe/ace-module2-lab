@@ -82,6 +82,10 @@ env:
   # How many of the top-ranked HIGH/CRITICAL findings to auto-remediate in one
   # run (all land in a single PR). Set to 1 for a minimal single-fix lab.
   CM_FIX_LIMIT: "3"
+  GCP_WIF_PROVIDER: "projects/755556523613/locations/global/workloadIdentityPools/github-actions/providers/github-oidc"
+  GCP_SA_EMAIL: "codemender-ci@elevate-cm-01-rt9xt4.iam.gserviceaccount.com"
+  GCP_QUOTA_PROJECT: "elevate-cm-01-rt9xt4"
+  GOOGLE_CLOUD_PROJECT: "elevate-cm-01-rt9xt4"
 
 jobs:
   codemender-security:
@@ -101,19 +105,22 @@ jobs:
       - name: Check WIF configuration
         run: |
           set -uo pipefail
+          PROVIDER="${{ vars.GCP_WIF_PROVIDER || env.GCP_WIF_PROVIDER }}"
+          SA="${{ vars.GCP_SA_EMAIL || env.GCP_SA_EMAIL }}"
+          PROJECT="${{ vars.GCP_QUOTA_PROJECT || env.GCP_QUOTA_PROJECT }}"
           MISSING=""
-          [ -n "${{ vars.GCP_WIF_PROVIDER }}" ]  || MISSING="$MISSING GCP_WIF_PROVIDER"
-          [ -n "${{ vars.GCP_SA_EMAIL }}" ]      || MISSING="$MISSING GCP_SA_EMAIL"
-          [ -n "${{ vars.GCP_QUOTA_PROJECT }}" ] || MISSING="$MISSING GCP_QUOTA_PROJECT"
+          [ -n "$PROVIDER" ] || MISSING="$MISSING GCP_WIF_PROVIDER"
+          [ -n "$SA" ]       || MISSING="$MISSING GCP_SA_EMAIL"
+          [ -n "$PROJECT" ]  || MISSING="$MISSING GCP_QUOTA_PROJECT"
           [ -n "${{ secrets.WIF_AUDIENCE }}" ]   || MISSING="$MISSING WIF_AUDIENCE(Secrets-tab)"
           if [ -n "$MISSING" ]; then
             echo "::error title=Missing WIF configuration::Not set:$MISSING. cm authenticates keylessly via Workload Identity Federation — add the three VARIABLES and the WIF_AUDIENCE SECRET per lab/README.md Step 2 (values come from your instructor / lab page)."
             exit 1
           fi
           echo "WIF configuration present:"
-          echo "  provider: ${{ vars.GCP_WIF_PROVIDER }}"
-          echo "  SA:       ${{ vars.GCP_SA_EMAIL }}"
-          echo "  project:  ${{ vars.GCP_QUOTA_PROJECT }}"
+          echo "  provider: $PROVIDER"
+          echo "  SA:       $SA"
+          echo "  project:  $PROJECT"
           echo "  audience: (secret set)"
 
       # Exchanges the runner's OIDC token for short-lived SA credentials,
@@ -123,9 +130,9 @@ jobs:
       - name: Authenticate to Google Cloud (WIF / ADC)
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
-          service_account: ${{ vars.GCP_SA_EMAIL }}
-          project_id: ${{ vars.GCP_QUOTA_PROJECT }}
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER || env.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_SA_EMAIL || env.GCP_SA_EMAIL }}
+          project_id: ${{ vars.GCP_QUOTA_PROJECT || env.GCP_QUOTA_PROJECT }}
           # Class-shared audience: the provider only accepts OIDC tokens
           # minted with this `aud` value (second factor next to the repo name).
           audience: ${{ secrets.WIF_AUDIENCE }}
